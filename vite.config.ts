@@ -1,0 +1,25 @@
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { defineConfig } from 'vitest/config';
+
+// Shown in the app, so a bug report can name the exact build.
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+let commit = process.env.GITHUB_SHA?.slice(0, 7) ?? '';
+try {
+  commit ||= execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+} catch {
+  // Not a git checkout: the version number alone has to do.
+}
+
+
+export default defineConfig({
+  // Relative paths, so the build works from any folder (local server, GitHub Pages).
+  base: './',
+  define: { __APP_VERSION__: JSON.stringify(version), __APP_COMMIT__: JSON.stringify(commit) },
+  worker: { format: 'es' },
+  // 線上版的「檢查更新」讀這個檔
+  plugins: [{ name: 'xk-version', generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version }) }); } }],
+  build: { target: 'es2022', chunkSizeWarningLimit: 1500 },
+  // The CAD kernel is slow in places, and slower still while the test files run side by side.
+  test: { testTimeout: 240_000 },
+});

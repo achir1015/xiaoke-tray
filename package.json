@@ -1,0 +1,92 @@
+{
+  "name": "xiaoke-tray",
+  "version": "1.0.0",
+  "description": "小柯機器人3D托盤生成器：參數化便當托盤與 3D 列印產生器（基於 Genstrio），一鍵送到 Bambu Studio、語音動態教學、自動更新",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "start": "node scripts/start.mjs",
+    "typecheck": "tsc",
+    "app": "vite build && electron .",
+    "electron": "electron .",
+    "dist:win": "tsc && vite build && electron-builder --win nsis portable --x64 --publish never",
+    "dist:mac": "tsc && vite build && electron-builder --mac dmg --publish never",
+    "icon": "python scripts/make_icon.py"
+  },
+  "license": "AGPL-3.0-or-later",
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/three": "^0.186.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3",
+    "fflate": "^0.8.3",
+    "qrcode-generator": "^2.0.4",
+    "replicad": "^1.1.0",
+    "replicad-opencascadejs": "^1.1.0",
+    "three": "^0.186.1"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "type": "module",
+  "private": true,
+  "productName": "小柯機器人3D托盤生成器",
+  "main": "electron/main.cjs",
+  "author": {
+    "name": "吳玉柱",
+    "url": "https://github.com/achir1015"
+  },
+  "homepage": "https://github.com/achir1015/xiaoke-tray",
+  "build": {
+    "appId": "com.achir.xiaoketray",
+    "productName": "小柯機器人3D托盤生成器",
+    "artifactName": "XiaokeTray-${version}-${os}-${arch}.${ext}",
+    "copyright": "Copyright © 2026 吳玉柱（基於 Genstrio © TechnikWeber，AGPL-3.0）",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/icon.png",
+      "package.json",
+      "LICENSE"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "executableName": "XiaokeTray"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "小柯機器人3D托盤生成器",
+      "uninstallDisplayName": "小柯機器人3D托盤生成器",
+      "language": "1028",
+      "installerLanguages": [
+        "zh_TW"
+      ]
+    },
+    "portable": {
+      "artifactName": "XiaokeTray-${version}-win-x64-portable.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "category": "public.app-category.graphics-design",
+      "identity": "-"
+    },
+    "dmg": {
+      "title": "小柯機器人3D托盤生成器 ${version}"
+    },
+    "npmRebuild": false
+  }
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="小柯機器人3D托盤生成器：參數化便當托盤、抽屜收納盒、Gridfinity、外殼、齒輪等 3D 列印模型產生器，一鍵送到 Bambu Studio。" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="小柯托盤" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>小柯機器人3D托盤生成器</title>
+  </head>
+  <body>
+    <div id="home">
+      <header>
+        <img src="./icon-192.png" alt="" width="44" height="44" />
+        <div>
+          <h1>小柯機器人3D托盤生成器</h1>
+          <p id="home-tagline"></p>
+        </div>
+        <button type="button" class="ghost icon settings-open"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.9 2.900l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.9-2.900l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.9-2.900l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.9 2.900l-.1.1a1.7 1.7 0 0 0-.3 1.800v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      </header>
+      <h2 id="home-question"></h2>
+      <nav id="tools"></nav>
+      <a id="home-version" class="version" href="https://github.com/achir1015/xiaoke-tray" target="_blank" rel="noopener"></a>
+    </div>
+    <dialog id="settings">
+      <form method="dialog">
+        <h2 id="settings-title"></h2>
+        <label for="lang" id="lang-label"></label>
+        <select id="lang">
+          <option value="zh">繁體中文</option>
+          <option value="de">Deutsch</option>
+          <option value="en">English</option>
+        </select>
+        <label for="unit" id="unit-label"></label>
+        <select id="unit"></select>
+        <label for="theme" id="theme-label"></label>
+        <select id="theme">
+          <option value="auto"></option>
+          <option value="light"></option>
+          <option value="dark"></option>
+        </select>
+        <label for="bed" id="bed-label"></label>
+        <input id="bed" type="number" min="80" max="600" step="1" />
+        <small id="bed-hint"></small>
+        <label for="fit" id="fit-label"></label>
+        <input id="fit" type="number" min="-0.2" max="0.5" step="0.05" />
+        <small id="fit-hint"></small>
+        <button id="settings-close" class="ghost"></button>
+      </form>
+    </dialog>
+    <div id="app" hidden>
+      <aside class="panel">
+        <header>
+          <button id="home-button" type="button" class="ghost icon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></button>
+          <div>
+            <h1 id="title"></h1>
+            <p id="tagline">小柯機器人3D托盤生成器</p>
+          </div>
+          <button type="button" class="ghost icon settings-open"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.9 2.900l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.9-2.900l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.9-2.900l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.9 2.900l-.1.1a1.7 1.7 0 0 0-.3 1.800v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+        </header>
+        <p id="desc"></p>
+        <select id="template"></select>
+        <form id="params" autocomplete="off" onsubmit="return false"></form>
+        <footer>
+          <span id="export-label"></span>
+          <div id="export"></div>
+          <select id="only" hidden></select>
+          <details id="project">
+            <summary id="project-label"></summary>
+            <div class="menu">
+              <div class="row">
+                <input id="tpl-name" type="text" maxlength="40" />
+                <button id="tpl-save" type="button" class="ghost"></button>
+              </div>
+              <button id="tpl-delete" type="button" class="ghost"></button>
+              <button id="file-save" type="button" class="ghost"></button>
+              <button id="file-open" type="button" class="ghost"></button>
+              <input id="file-input" type="file" accept=".json,application/json" hidden />
+              <button id="share" type="button" class="ghost"></button>
+              <button id="reset" type="button" class="ghost"></button>
+            </div>
+          </details>
+          <a id="version" class="version" href="https://github.com/achir1015/xiaoke-tray" target="_blank" rel="noopener"></a>
+        </footer>
+      </aside>
+      <main>
+        <div id="viewer"></div>
+        <div class="overlay top">
+          <p id="status" role="status" class="busy"></p>
+          <span class="view-tools">
+            <button id="assembled" type="button" class="ghost" aria-pressed="false" hidden></button>
+            <button id="fit" type="button" class="ghost">
+              <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+            </button>
+          </span>
+        </div>
+        <div class="overlay bottom">
+          <details id="notes-box" hidden>
+            <summary id="notes-label"></summary>
+            <ul id="notes"></ul>
+          </details>
+          <p id="hint"></p>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "小柯機器人3D托盤生成器",
+  "short_name": "小柯托盤",
+  "description": "參數化 3D 列印托盤生成器",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#16202b",
+  "theme_color": "#1a3a6e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
