@@ -870,3 +870,15 @@ button.bambu:disabled { opacity: 0.6; }
 .xk-dialog .xk-notes { white-space: pre-wrap; max-height: 220px; overflow: auto; font: inherit; font-size: 13px; background: var(--panel); padding: 8px; border-radius: 8px; }
 .xk-dialog progress { width: 100%; }
 .xk-dialog .xk-row { display: flex; gap: 8px; justify-content: flex-end; }
+.xk-desktop-link {
+  display: block;
+  margin: 18px auto 6px;
+  width: fit-content;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #00ae42;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.xk-desktop-link:hover { filter: brightness(1.08); }

@@ -1,7 +1,9 @@
-name: Deploy to GitHub Pages
+name: 部署線上版（GitHub Pages）
 
-# 線上版尚未啟用：先改成手動執行
 on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'public/**', 'index.html', 'package.json', 'vite.config.ts', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -17,15 +19,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm test
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v5
+      - run: npx tsc
+      - run: npx vitest run tests/tray.test.ts
+      - run: npx vite build
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
@@ -37,4 +40,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4

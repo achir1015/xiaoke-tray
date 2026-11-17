@@ -65,6 +65,8 @@ interface Step {
   before?: () => void | Promise<void>;
   /** 說話途中的動畫示範。 */
   demo?: () => Promise<void>;
+  /** 線上版改用的說明。 */
+  web?: { zh: string; en: string };
 }
 
 const app = () => window.xkApp;
@@ -166,6 +168,11 @@ const STEPS: Step[] = [
     target: () => $('#send-bambu'),
     zh: '最方便的是這顆「送到 Bambu Studio」：按一下，托盤會直接在拓竹 Bambu Studio 裡打開，接著切片就能列印。',
     en: 'Most convenient: Send to Bambu Studio opens the tray directly in Bambu Studio, ready to slice and print.',
+    // 線上版不能直接啟動 Bambu Studio：改成下載 3MF
+    web: {
+      zh: '這顆綠色按鈕會下載 3MF 檔，用拓竹 Bambu Studio 打開就能切片列印。想要一鍵直接送進 Bambu Studio，可以安裝首頁的桌面版。',
+      en: 'The green button downloads a 3MF file to open in Bambu Studio. The desktop version can send it there in one click.',
+    },
   },
   {
     before: () => {
@@ -369,7 +376,8 @@ export async function startGuide() {
         index = jump;
         continue;
       }
-      const line = getLang() === 'zh' ? step.zh : step.en;
+      const said = !desktop() && step.web ? step.web : step;
+      const line = getLang() === 'zh' ? said.zh : said.en;
       text.textContent = line;
       robot.classList.remove('pop');
       void robot.offsetWidth;
@@ -507,6 +515,16 @@ export function installChrome(version: string) {
     upd.addEventListener('click', () => void checkUpdate(version));
     header.insertBefore(guide, gear);
     header.insertBefore(upd, gear);
+  }
+  // 線上版：首頁加上桌面版下載連結（桌面版才能一鍵送到 Bambu Studio）
+  if (!desktop()) {
+    const link = document.createElement('a');
+    link.className = 'xk-desktop-link';
+    link.href = `https://github.com/${UPDATE_REPO}/releases/latest`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = '⬇ 下載桌面版（Windows／Mac，可一鍵送到 Bambu Studio）';
+    document.querySelector('#home-version')?.before(link);
   }
   // 啟動後安靜地檢查一次
   setTimeout(() => void checkUpdate(version, true), 4000);
