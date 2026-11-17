@@ -19,7 +19,7 @@
 | macOS（MacBook Pro） | ✅ v1.1.0 起（Apple 晶片＋Intel） |
 | 線上版（HTML） | ✅ https://achir1015.github.io/xiaoke-tray/ （不用安裝；送到 Bambu Studio 改為下載 3MF） |
 | iPhone／iPad | ✅ v1.2.0 起，線上安裝 https://achir1015.github.io/xiaoke-tray/ios/ （限已登記裝置） |
-| Android | 規劃中 |
+| Android | ✅ v1.2.0 起，Release 下載 `XiaokeTray-…-android.apk`（模型存到「下載／小柯托盤」） |
 
 ## 開發
 

@@ -9,6 +9,7 @@
 - Windows：`XiaokeTray-1.2.0-win-x64.exe`（安裝版）、`XiaokeTray-1.2.0-win-x64-portable.exe`（免安裝版）
 - Mac：Apple 晶片 `XiaokeTray-1.2.0-mac-arm64.dmg`、Intel `XiaokeTray-1.2.0-mac-x64.dmg`（第一次開啟若被擋：在「應用程式」對程式按右鍵 →「打開」）
 - iPhone／iPad：`xiaoke-tray-ios.ipa`（建議直接用上面的安裝頁）
+- Android：`XiaokeTray-1.2.0-android.apk`（下載後點開安裝；模型存到「下載／小柯托盤」）
 - 線上版：https://achir1015.github.io/xiaoke-tray/
 
 基於 [Genstrio](https://github.com/TechnikWeber/Genstrio)，AGPL-3.0-or-later。

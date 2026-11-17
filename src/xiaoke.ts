@@ -62,6 +62,24 @@ export const iosApp = (): IOSBridge | undefined => {
   return w.XiaokeIOS ? w.webkit?.messageHandlers?.xkq : undefined;
 };
 
+// --- Android App（WebView）：window.XiaokeAndroid，回傳值都是 JSON 字串 ----------------------
+
+interface AndroidBridge {
+  beginSave(name: string): string;
+  writeChunk(token: string, b64: string): string;
+  endSave(token: string): string;
+  checkUpdate(): string;
+  installUpdate(url: string, ver: string): string;
+  updateStatus(): string;
+  openUrl(url: string): boolean;
+  ttsAvailable(): boolean;
+  ttsSpeak(text: string, rate: number, id: string): void;
+  ttsStop(): void;
+}
+export const androidApp = (): AndroidBridge | undefined => (window as unknown as { XiaokeAndroid?: AndroidBridge }).XiaokeAndroid;
+/** 手機 App（iOS 或 Android）裡執行。 */
+export const mobileApp = () => !!(iosApp() || androidApp());
+
 function toBase64(bytes: Uint8Array): string {
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
@@ -70,6 +88,16 @@ function toBase64(bytes: Uint8Array): string {
 
 /** 存檔：iOS App 分段傳給 App 再打開分享選單；其他環境用瀏覽器下載。 */
 export async function saveFile(name: string, data: ArrayBuffer, mime: string): Promise<void> {
+  const android = androidApp();
+  if (android) {
+    const begin = JSON.parse(android.beginSave(name)) as { status: string; token?: string; message?: string };
+    if (begin.status !== 'ok' || !begin.token) throw new Error(begin.message ?? '無法建立檔案');
+    const bytes = new Uint8Array(data);
+    const CHUNK = 256 * 1024;
+    for (let i = 0; i < bytes.length; i += CHUNK) android.writeChunk(begin.token, toBase64(bytes.subarray(i, i + CHUNK)));
+    android.endSave(begin.token);
+    return;
+  }
   const ios = iosApp();
   if (ios) {
     const begin = (await ios.postMessage({ cmd: 'begin_save', args: [name] })) as { status?: string; token?: string };
@@ -106,6 +134,8 @@ interface Step {
   web?: { zh: string; en: string };
   /** iPhone／iPad App 改用的說明。 */
   ios?: { zh: string; en: string };
+  /** Android App 改用的說明。 */
+  android?: { zh: string; en: string };
 }
 
 const app = () => window.xkApp;
@@ -208,6 +238,10 @@ const STEPS: Step[] = [
     zh: '最方便的是這顆「送到 Bambu Studio」：按一下，托盤會直接在拓竹 Bambu Studio 裡打開，接著切片就能列印。',
     en: 'Most convenient: Send to Bambu Studio opens the tray directly in Bambu Studio, ready to slice and print.',
     // 線上版不能直接啟動 Bambu Studio：改成下載 3MF
+    android: {
+      zh: '這顆綠色按鈕會把 3MF 存到手機的「下載／小柯托盤」資料夾，傳到電腦後用拓竹 Bambu Studio 打開就能切片列印。',
+      en: 'The green button saves the 3MF to Downloads/小柯托盤 on your phone; open it in Bambu Studio on your computer.',
+    },
     ios: {
       zh: '這顆綠色按鈕會打開分享選單：可以把 3MF 存到「檔案」，或用 AirDrop 傳給電腦，再用拓竹 Bambu Studio 打開切片列印。',
       en: 'The green button opens the share sheet: save the 3MF to Files or AirDrop it to your computer for Bambu Studio.',
@@ -258,7 +292,39 @@ function pickVoice(): SpeechSynthesisVoice | undefined {
   return undefined;
 }
 
+let ttsSeq = 0;
+const ttsWaiting = new Map<string, () => void>();
+(window as unknown as { __xkTtsDone?: (id: string) => void }).__xkTtsDone = (id: string) => {
+  ttsWaiting.get(id)?.();
+  ttsWaiting.delete(id);
+};
+/** Android 的 WebView 沒有網頁語音：改用系統的文字轉語音。 */
+function speakAndroid(android: AndroidBridge, text: string, mouth: HTMLElement): Promise<void> {
+  return new Promise((resolve) => {
+    const id = `t${++ttsSeq}`;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      cutSpeech = null;
+      ttsWaiting.delete(id);
+      mouth.classList.remove('talk');
+      resolve();
+    };
+    cutSpeech = () => {
+      android.ttsStop();
+      finish();
+    };
+    ttsWaiting.set(id, finish);
+    mouth.classList.add('talk');
+    setTimeout(finish, Math.max(4000, text.length * 300) + 2000);
+    android.ttsSpeak(text, 1.0, id);
+  });
+}
+
 function speak(text: string, mouth: HTMLElement): Promise<void> {
+  const android = androidApp();
+  if (android?.ttsAvailable()) return speakAndroid(android, text, mouth);
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) {
       setTimeout(resolve, Math.max(2500, text.length * 180));
@@ -336,7 +402,8 @@ export async function startGuide() {
   const pauseBtn = layer.querySelector<HTMLButtonElement>('.xk-pause')!;
   let wake: (() => void) | null = null;
   const interrupt = () => {
-    speechSynthesis?.cancel();
+    androidApp()?.ttsStop();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
     cutSpeech?.();
     wake?.();
   };
@@ -351,9 +418,10 @@ export async function startGuide() {
   pauseBtn.addEventListener('click', () => {
     paused = !paused;
     pauseBtn.textContent = paused ? '▶︎ ' + (getLang() === 'zh' ? '繼續' : 'Go') : '⏸';
-    if (paused) speechSynthesis?.pause();
+    if (paused && androidApp()) androidApp()!.ttsStop();
+    if (paused && 'speechSynthesis' in window) speechSynthesis.pause();
     else {
-      speechSynthesis?.resume();
+      if ('speechSynthesis' in window) speechSynthesis.resume();
       wake?.();
     }
   });
@@ -419,7 +487,7 @@ export async function startGuide() {
         index = jump;
         continue;
       }
-      const said = iosApp() && step.ios ? step.ios : !desktop() && step.web ? step.web : step;
+      const said = androidApp() && step.android ? step.android : iosApp() && step.ios ? step.ios : !desktop() && step.web ? step.web : step;
       const line = getLang() === 'zh' ? said.zh : said.en;
       text.textContent = line;
       robot.classList.remove('pop');
@@ -436,7 +504,8 @@ export async function startGuide() {
       index = jump ?? index + 1;
     }
   } finally {
-    speechSynthesis?.cancel();
+    androidApp()?.ttsStop();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
     document.removeEventListener('keydown', onKey);
     layer.remove();
     running = false;
@@ -487,8 +556,15 @@ export async function checkUpdate(current: string, quiet = false) {
   const xk = desktop();
   try {
     let info: UpdateInfo;
+    const android = androidApp();
+    let apkUrl = '';
     if (xk) info = await xk.update.check();
-    else if (iosApp()) {
+    else if (android) {
+      const j = JSON.parse(android.checkUpdate()) as { status: string; current: string; latest: string; url: string; page: string; notes: string; message?: string };
+      if (j.status !== 'ok') throw new Error(j.message ?? '查詢失敗');
+      apkUrl = j.url;
+      info = { current: j.current, latest: j.latest, newer: cmpVer(j.latest, j.current) > 0, notes: j.notes, page: j.page, canInstall: !!j.url, flavor: 'android' };
+    } else if (iosApp()) {
       const res = await fetch(`${PAGES}/version.json?t=${Date.now()}`, { cache: 'no-store' });
       const j = (await res.json()) as { version: string; notes?: string };
       info = { current, latest: j.version, newer: cmpVer(j.version, current) > 0, notes: j.notes ?? '', page: `${PAGES}/ios/`, canInstall: true, flavor: 'ios' };
@@ -505,11 +581,30 @@ export async function checkUpdate(current: string, quiet = false) {
     const d = dialog(`<h2>有新版本 v${esc(info.latest)}</h2><p>目前版本 v${esc(info.current)}</p>
       ${info.notes ? `<pre class="xk-notes">${esc(info.notes)}</pre>` : ''}
       <progress hidden max="1" value="0"></progress><p class="xk-msg"></p>
-      <div class="xk-row"><button type="button" class="xk-go">${info.canInstall ? (xk ? '下載並安裝' : iosApp() ? '前往安裝頁更新' : '立即更新') : '開啟下載頁'}</button><button class="ghost">稍後</button></div>`);
+      <div class="xk-row"><button type="button" class="xk-go">${info.canInstall ? (xk || android ? '下載並安裝' : iosApp() ? '前往安裝頁更新' : '立即更新') : '開啟下載頁'}</button><button class="ghost">稍後</button></div>`);
     const go = d.querySelector<HTMLButtonElement>('.xk-go')!;
     const bar = d.querySelector<HTMLProgressElement>('progress')!;
     const msg = d.querySelector<HTMLElement>('.xk-msg')!;
     go.addEventListener('click', async () => {
+      if (android) {
+        go.disabled = true;
+        bar.hidden = false;
+        android.installUpdate(apkUrl, info.latest);
+        const timer = setInterval(() => {
+          const st = JSON.parse(android.updateStatus()) as { state: string; pct: number };
+          bar.value = st.pct / 100;
+          msg.textContent =
+            st.state === 'permission' ? '請在設定畫面允許「安裝未知應用程式」，回來後再按一次。'
+            : st.state === 'downloading' ? `下載中 ${st.pct}%`
+            : st.state === 'launching' ? '下載完成，請在跳出的畫面按「更新」。'
+            : st.state === 'error' ? '更新失敗，請稍後再試。' : '';
+          if (st.state !== 'downloading') {
+            clearInterval(timer);
+            go.disabled = false;
+          }
+        }, 500);
+        return;
+      }
       if (iosApp()) {
         await iosApp()!.postMessage({ cmd: 'open_url', args: [`${PAGES}/ios/`] });
         return;
@@ -569,7 +664,7 @@ export function installChrome(version: string) {
     header.insertBefore(upd, gear);
   }
   // 線上版：首頁加上桌面版下載連結（桌面版才能一鍵送到 Bambu Studio）
-  if (!desktop() && !iosApp()) {
+  if (!desktop() && !mobileApp()) {
     const link = document.createElement('a');
     link.className = 'xk-desktop-link';
     link.href = `https://github.com/${UPDATE_REPO}/releases/latest`;

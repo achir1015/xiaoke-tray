@@ -6,7 +6,7 @@ import { getLang, setLang, t, type Lang } from './i18n';
 import { formatLength, fromUnit, getUnit, parseLength, setUnit, unitStep, UNITS, type Unit } from './units';
 import { drawPicture, readPicture } from './picture';
 import { Viewer } from './viewer';
-import { APP_NAME, desktop, guideOnFirstRun, installChrome, iosApp, saveFile } from './xiaoke';
+import { androidApp, APP_NAME, desktop, guideOnFirstRun, installChrome, iosApp, saveFile } from './xiaoke';
 
 declare const __APP_VERSION__: string;
 declare const __APP_COMMIT__: string;
@@ -574,7 +574,7 @@ function renderChrome() {
   document.title = atHome ? APP_NAME : `${APP_NAME} – ${title}`;
   $('#title').textContent = title;
   const bambuBtn = document.querySelector<HTMLButtonElement>('#send-bambu');
-  if (bambuBtn) bambuBtn.textContent = desktop() ? t('app.sendBambu') : iosApp() ? t('app.shareBambu') : t('app.downloadBambu');
+  if (bambuBtn) bambuBtn.textContent = desktop() ? t('app.sendBambu') : androidApp() ? t('app.saveBambu') : iosApp() ? t('app.shareBambu') : t('app.downloadBambu');
   $('#home-tagline').textContent = t('app.tagline');
   $('#home-question').textContent = t('app.homeQuestion');
   $('#settings-title').textContent = t('app.settings');
@@ -842,6 +842,25 @@ fetch('__genstrio/ping')
     if (res.ok && res.headers.get('x-genstrio')) new EventSource('__genstrio/alive');
   })
   .catch(() => {});
+
+// Android 返回鍵：關掉教學或對話框，或從產生器回首頁；回傳 true 表示已處理
+(window as unknown as { __xkBack?: () => boolean }).__xkBack = () => {
+  const close = document.querySelector<HTMLButtonElement>('.xk-guide .xk-close');
+  if (close) {
+    close.click();
+    return true;
+  }
+  const open = document.querySelector<HTMLDialogElement>('dialog[open]');
+  if (open) {
+    open.close();
+    return true;
+  }
+  if (!atHome) {
+    history.back();
+    return true;
+  }
+  return false;
+};
 
 installChrome(__APP_VERSION__);
 guideOnFirstRun();

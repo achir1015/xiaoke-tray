@@ -2473,6 +2473,7 @@ const en: Dict = {
   'app.basedOn': 'based on Genstrio (AGPL-3.0)',
   'app.downloadBambu': '3MF for Bambu Studio',
   'app.shareBambu': 'Share 3MF (Files / AirDrop)',
+  'app.saveBambu': 'Save 3MF (Downloads)',
 };
 
 const zh: Dict = {
@@ -3742,6 +3743,7 @@ const zh: Dict = {
   'app.basedOn': '基於 Genstrio 開源專案（AGPL-3.0）',
   'app.downloadBambu': '下載 3MF（用 Bambu Studio 開啟）',
   'app.shareBambu': '分享 3MF（存到檔案／AirDrop 給電腦）',
+  'app.saveBambu': '儲存 3MF（下載／小柯托盤）',
 };
 
 const DICTS: Record<Lang, Dict> = { de, en, zh };
