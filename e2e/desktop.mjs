@@ -7,7 +7,10 @@ import { join } from 'node:path';
 
 const PORT = 9347;
 const exe = process.env.XK_EXE;
-const electron = join(process.cwd(), 'node_modules', 'electron', 'dist', 'electron.exe');
+const MAC = process.platform === 'darwin';
+const electron = MAC
+  ? join(process.cwd(), 'node_modules', 'electron', 'dist', 'Electron.app', 'Contents', 'MacOS', 'Electron')
+  : join(process.cwd(), 'node_modules', 'electron', 'dist', 'electron.exe');
 const child = exe
   ? spawn(exe, [`--remote-debugging-port=${PORT}`], { stdio: 'ignore' })
   : spawn(electron, ['.', `--remote-debugging-port=${PORT}`], { stdio: 'ignore' });
@@ -98,13 +101,13 @@ try {
     const t0 = Date.now();
     await evaluate("document.querySelector('#send-bambu').click(); return 1");
     check('送出後顯示已開啟', await waitFor("/Bambu Studio/.test(document.querySelector('#status').textContent) && !/正在/.test(document.querySelector('#status').textContent)", 60000), await evaluate("return document.querySelector('#status').textContent"));
-    const docs = execSync("powershell -NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; [Environment]::GetFolderPath('MyDocuments')\"", { encoding: 'utf8' }).trim() || join(homedir(), 'Documents');
+    const docs = MAC ? join(homedir(), 'Documents') : execSync("powershell -NoProfile -Command \"[Console]::OutputEncoding=[Text.Encoding]::UTF8; [Environment]::GetFolderPath('MyDocuments')\"", { encoding: 'utf8' }).trim() || join(homedir(), 'Documents');
     const dir = join(docs, '小柯托盤');
     const fresh = existsSync(dir) && readdirSync(dir).filter((f) => f.endsWith('.3mf') && statSync(join(dir, f)).mtimeMs >= t0 - 1000);
     check('3MF 存到 文件\\小柯托盤', fresh && fresh.length > 0, fresh ? fresh.join(', ') : '');
     await sleep(4000);
-    const running = execSync('tasklist /FI "IMAGENAME eq bambu-studio.exe" /NH', { encoding: 'utf8' });
-    check('Bambu Studio 已啟動', /bambu-studio\.exe/i.test(running));
+    const running = MAC ? execSync('pgrep -fl BambuStudio || true', { encoding: 'utf8' }) : execSync('tasklist /FI "IMAGENAME eq bambu-studio.exe" /NH', { encoding: 'utf8' });
+    check('Bambu Studio 已啟動', /bambu-?studio/i.test(running));
   }
 } catch (e) {
   fail++;
@@ -112,7 +115,8 @@ try {
 } finally {
   ws.close();
   try {
-    execSync(`taskkill /PID ${child.pid} /T /F`, { stdio: 'ignore' });
+    if (MAC) child.kill('SIGTERM');
+    else execSync(`taskkill /PID ${child.pid} /T /F`, { stdio: 'ignore' });
   } catch {
     // 已結束
   }

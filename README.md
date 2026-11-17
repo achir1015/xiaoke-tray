@@ -13,8 +13,8 @@
 
 | 平台 | 狀態 |
 | --- | --- |
-| Windows 11 | ✅ v1.0.0（安裝版＋免安裝版） |
-| macOS（MacBook Pro） | 規劃中 |
+| Windows 11 | ✅ 安裝版＋免安裝版 |
+| macOS（MacBook Pro） | ✅ v1.1.0 起（Apple 晶片＋Intel） |
 | 線上版（HTML） | 規劃中 |
 | iPhone／iPad（線上安裝）、Android | 規劃中 |
 
