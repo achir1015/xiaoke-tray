@@ -7,7 +7,7 @@ const get = async (u) => (await fetch(`https://api.github.com/repos/${REPO}/${u}
 const end = Date.now() + 50 * 60_000;
 let run;
 while (Date.now() < end) {
-  const runs = await get('actions/workflows/build.yml/runs?per_page=1');
+  const runs = await get(`actions/workflows/${process.env.WF || 'build.yml'}/runs?per_page=1`);
   run = runs.workflow_runs?.[0];
   if (run && run.status === 'completed') break;
   await sleep(30_000);

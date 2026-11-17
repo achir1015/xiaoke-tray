@@ -118,7 +118,7 @@ async function exportFile(id: number, generator: GeneratorId, params: Params, fo
     data = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
     mime = format === 'stl' ? 'model/stl' : 'model/3mf';
   }
-  send({ type: 'file', id, name: `genstrio-${generator}${chosen ? `-${only}` : ''}.${format}`, mime, data }, [data]);
+  send({ type: 'file', id, name: `xiaoke-${generator}${chosen ? `-${only}` : ''}.${format}`, mime, data }, [data]);
 }
 
 self.onmessage = async (event: MessageEvent<Request>) => {
