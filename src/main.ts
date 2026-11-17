@@ -6,7 +6,7 @@ import { getLang, setLang, t, type Lang } from './i18n';
 import { formatLength, fromUnit, getUnit, parseLength, setUnit, unitStep, UNITS, type Unit } from './units';
 import { drawPicture, readPicture } from './picture';
 import { Viewer } from './viewer';
-import { APP_NAME, desktop, guideOnFirstRun, installChrome } from './xiaoke';
+import { APP_NAME, desktop, guideOnFirstRun, installChrome, iosApp, saveFile } from './xiaoke';
 
 declare const __APP_VERSION__: string;
 declare const __APP_COMMIT__: string;
@@ -250,10 +250,7 @@ const onMessage = (event: MessageEvent<Response>) => {
       void openInBambu(msg.name, msg.data);
       return;
     }
-    const url = URL.createObjectURL(new Blob([msg.data], { type: msg.mime }));
-    el('a', { href: url, download: msg.name }).click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    setExporting(false);
+    void saveFile(msg.name, msg.data, msg.mime).finally(() => setExporting(false));
     return;
   }
   if (msg.type === 'error') {
@@ -310,9 +307,7 @@ async function openInBambu(name: string, data: ArrayBuffer) {
   const xk = desktop();
   if (!xk) {
     // 線上版：下載 3MF，再用 Bambu Studio 開啟
-    const url = URL.createObjectURL(new Blob([data], { type: 'model/3mf' }));
-    el('a', { href: url, download: name }).click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    await saveFile(name, data, 'model/3mf');
     setExporting(false);
     return;
   }
@@ -579,7 +574,7 @@ function renderChrome() {
   document.title = atHome ? APP_NAME : `${APP_NAME} – ${title}`;
   $('#title').textContent = title;
   const bambuBtn = document.querySelector<HTMLButtonElement>('#send-bambu');
-  if (bambuBtn) bambuBtn.textContent = desktop() ? t('app.sendBambu') : t('app.downloadBambu');
+  if (bambuBtn) bambuBtn.textContent = desktop() ? t('app.sendBambu') : iosApp() ? t('app.shareBambu') : t('app.downloadBambu');
   $('#home-tagline').textContent = t('app.tagline');
   $('#home-question').textContent = t('app.homeQuestion');
   $('#settings-title').textContent = t('app.settings');
@@ -724,9 +719,7 @@ $('#tpl-delete').addEventListener('click', () => {
 });
 $('#file-save').addEventListener('click', () => {
   const project = { app: 'xiaoke-tray', version: __APP_VERSION__, generator: current, params: params[current] };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }));
-  el('a', { href: url, download: `xiaoke-tray-${current}.json` }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  void saveFile(`xiaoke-tray-${current}.json`, new TextEncoder().encode(JSON.stringify(project, null, 2)).buffer as ArrayBuffer, 'application/json');
 });
 const fileInput = $<HTMLInputElement>('#file-input');
 $('#file-open').addEventListener('click', () => fileInput.click());

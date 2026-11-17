@@ -1,0 +1,58 @@
+name: XiaokeTray
+options:
+  bundleIdPrefix: com.achir
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: "10200"
+targets:
+  XiaokeTray:
+    type: application
+    platform: iOS
+    sources:
+      - path: XiaokeTray
+      - path: web            # 和電腦版、線上版同一份網頁（sync.sh 從 ../dist 複製進來），整個資料夾放進 App
+        type: folder
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.achir.xiaoketray
+        TARGETED_DEVICE_FAMILY: "1,2"     # iPhone 與 iPad
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7BN6XJ59KP      # Apple Developer Program（個人）
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: XiaokeTray/Info.plist
+      properties:
+        CFBundleDisplayName: 小柯托盤
+        CFBundleDevelopmentRegion: zh_TW
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: ""
+        UIRequiresFullScreen: true
+        # iPhone 直放（上面 3D 預覽、下面參數）；iPad 四個方向都可以（橫放就是電腦版版面）
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+schemes:
+  XiaokeTray:
+    build:
+      targets:
+        XiaokeTray: all
+    run:
+      config: Debug
+    archive:
+      config: Release

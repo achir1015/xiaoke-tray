@@ -1,0 +1,4 @@
+web
+build
+*.xcodeproj
+XiaokeTray/Info.plist

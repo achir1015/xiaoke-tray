@@ -2,3 +2,4 @@
 *.png binary
 *.ico binary
 *.woff binary
+ios/*.sh text eol=lf

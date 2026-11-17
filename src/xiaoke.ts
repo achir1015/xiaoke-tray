@@ -51,6 +51,43 @@ declare global {
 
 export const desktop = (): DesktopBridge | undefined => window.xk;
 
+// --- iPhone／iPad App（WKWebView）：存檔改用分享選單 ------------------------------------
+
+interface IOSBridge {
+  postMessage(msg: { cmd: string; args?: unknown[] }): Promise<{ status?: string; token?: string; message?: string } | boolean | null>;
+}
+/** 在 iPhone／iPad App 裡執行時，App 注入 window.XiaokeIOS = true 與 xkq 訊息通道。 */
+export const iosApp = (): IOSBridge | undefined => {
+  const w = window as unknown as { XiaokeIOS?: boolean; webkit?: { messageHandlers?: { xkq?: IOSBridge } } };
+  return w.XiaokeIOS ? w.webkit?.messageHandlers?.xkq : undefined;
+};
+
+function toBase64(bytes: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/** 存檔：iOS App 分段傳給 App 再打開分享選單；其他環境用瀏覽器下載。 */
+export async function saveFile(name: string, data: ArrayBuffer, mime: string): Promise<void> {
+  const ios = iosApp();
+  if (ios) {
+    const begin = (await ios.postMessage({ cmd: 'begin_save', args: [name] })) as { status?: string; token?: string };
+    if (begin?.status !== 'ok' || !begin.token) throw new Error('無法建立檔案');
+    const bytes = new Uint8Array(data);
+    const CHUNK = 512 * 1024;
+    for (let i = 0; i < bytes.length; i += CHUNK) await ios.postMessage({ cmd: 'write_chunk', args: [begin.token, toBase64(bytes.subarray(i, i + CHUNK))] });
+    await ios.postMessage({ cmd: 'end_save', args: [begin.token] });
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([data], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -67,6 +104,8 @@ interface Step {
   demo?: () => Promise<void>;
   /** 線上版改用的說明。 */
   web?: { zh: string; en: string };
+  /** iPhone／iPad App 改用的說明。 */
+  ios?: { zh: string; en: string };
 }
 
 const app = () => window.xkApp;
@@ -169,6 +208,10 @@ const STEPS: Step[] = [
     zh: '最方便的是這顆「送到 Bambu Studio」：按一下，托盤會直接在拓竹 Bambu Studio 裡打開，接著切片就能列印。',
     en: 'Most convenient: Send to Bambu Studio opens the tray directly in Bambu Studio, ready to slice and print.',
     // 線上版不能直接啟動 Bambu Studio：改成下載 3MF
+    ios: {
+      zh: '這顆綠色按鈕會打開分享選單：可以把 3MF 存到「檔案」，或用 AirDrop 傳給電腦，再用拓竹 Bambu Studio 打開切片列印。',
+      en: 'The green button opens the share sheet: save the 3MF to Files or AirDrop it to your computer for Bambu Studio.',
+    },
     web: {
       zh: '這顆綠色按鈕會下載 3MF 檔，用拓竹 Bambu Studio 打開就能切片列印。想要一鍵直接送進 Bambu Studio，可以安裝首頁的桌面版。',
       en: 'The green button downloads a 3MF file to open in Bambu Studio. The desktop version can send it there in one click.',
@@ -376,7 +419,7 @@ export async function startGuide() {
         index = jump;
         continue;
       }
-      const said = !desktop() && step.web ? step.web : step;
+      const said = iosApp() && step.ios ? step.ios : !desktop() && step.web ? step.web : step;
       const line = getLang() === 'zh' ? said.zh : said.en;
       text.textContent = line;
       robot.classList.remove('pop');
@@ -419,6 +462,7 @@ export function guideOnFirstRun() {
 // --- 版本更新 ---------------------------------------------------------------------
 
 const UPDATE_REPO = 'achir1015/xiaoke-tray';
+const PAGES = 'https://achir1015.github.io/xiaoke-tray';
 
 function cmpVer(a: string, b: string) {
   const pa = a.replace(/^v/, '').split('.').map((x) => parseInt(x, 10) || 0);
@@ -444,7 +488,11 @@ export async function checkUpdate(current: string, quiet = false) {
   try {
     let info: UpdateInfo;
     if (xk) info = await xk.update.check();
-    else {
+    else if (iosApp()) {
+      const res = await fetch(`${PAGES}/version.json?t=${Date.now()}`, { cache: 'no-store' });
+      const j = (await res.json()) as { version: string; notes?: string };
+      info = { current, latest: j.version, newer: cmpVer(j.version, current) > 0, notes: j.notes ?? '', page: `${PAGES}/ios/`, canInstall: true, flavor: 'ios' };
+    } else {
       // 線上版：比對 version.json，有新版就重新整理頁面（略過快取）
       const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
       const j = (await res.json()) as { version: string; notes?: string };
@@ -457,11 +505,15 @@ export async function checkUpdate(current: string, quiet = false) {
     const d = dialog(`<h2>有新版本 v${esc(info.latest)}</h2><p>目前版本 v${esc(info.current)}</p>
       ${info.notes ? `<pre class="xk-notes">${esc(info.notes)}</pre>` : ''}
       <progress hidden max="1" value="0"></progress><p class="xk-msg"></p>
-      <div class="xk-row"><button type="button" class="xk-go">${info.canInstall ? (xk ? '下載並安裝' : '立即更新') : '開啟下載頁'}</button><button class="ghost">稍後</button></div>`);
+      <div class="xk-row"><button type="button" class="xk-go">${info.canInstall ? (xk ? '下載並安裝' : iosApp() ? '前往安裝頁更新' : '立即更新') : '開啟下載頁'}</button><button class="ghost">稍後</button></div>`);
     const go = d.querySelector<HTMLButtonElement>('.xk-go')!;
     const bar = d.querySelector<HTMLProgressElement>('progress')!;
     const msg = d.querySelector<HTMLElement>('.xk-msg')!;
     go.addEventListener('click', async () => {
+      if (iosApp()) {
+        await iosApp()!.postMessage({ cmd: 'open_url', args: [`${PAGES}/ios/`] });
+        return;
+      }
       if (!xk) {
         location.reload();
         return;
@@ -517,7 +569,7 @@ export function installChrome(version: string) {
     header.insertBefore(upd, gear);
   }
   // 線上版：首頁加上桌面版下載連結（桌面版才能一鍵送到 Bambu Studio）
-  if (!desktop()) {
+  if (!desktop() && !iosApp()) {
     const link = document.createElement('a');
     link.className = 'xk-desktop-link';
     link.href = `https://github.com/${UPDATE_REPO}/releases/latest`;

@@ -882,3 +882,6 @@ button.bambu:disabled { opacity: 0.6; }
   text-decoration: none;
 }
 .xk-desktop-link:hover { filter: brightness(1.08); }
+@media (max-width: 520px) {
+  #home header h1 { font-size: 20px; line-height: 1.25; }
+}

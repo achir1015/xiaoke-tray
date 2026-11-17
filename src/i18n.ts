@@ -2472,6 +2472,7 @@ const en: Dict = {
   'app.update': 'Check for updates',
   'app.basedOn': 'based on Genstrio (AGPL-3.0)',
   'app.downloadBambu': '3MF for Bambu Studio',
+  'app.shareBambu': 'Share 3MF (Files / AirDrop)',
 };
 
 const zh: Dict = {
@@ -3740,6 +3741,7 @@ const zh: Dict = {
   'app.update': '檢查更新',
   'app.basedOn': '基於 Genstrio 開源專案（AGPL-3.0）',
   'app.downloadBambu': '下載 3MF（用 Bambu Studio 開啟）',
+  'app.shareBambu': '分享 3MF（存到檔案／AirDrop 給電腦）',
 };
 
 const DICTS: Record<Lang, Dict> = { de, en, zh };

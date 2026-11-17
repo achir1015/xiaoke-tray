@@ -1,6 +1,6 @@
 {
   "name": "xiaoke-tray",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "小柯機器人3D托盤生成器：參數化便當托盤與 3D 列印產生器（基於 Genstrio），一鍵送到 Bambu Studio、語音動態教學、自動更新",
   "scripts": {
     "test": "vitest run",
