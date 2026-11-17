@@ -1,4 +1,5 @@
 # 小柯機器人3D托盤生成器
+<img width="800" height="599" alt="image" src="https://github.com/user-attachments/assets/1f0c315f-a74a-47dc-a7b8-316dc1ec2fcf" />
 
 參數化 3D 列印托盤生成器：輸入幾個尺寸，看著 3D 模型一步步建出來，一鍵送到拓竹 **Bambu Studio** 切片列印，或下載 STL／3MF／STEP。
 
